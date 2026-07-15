@@ -69,7 +69,7 @@ Projet_binome/
     ├── Dockerfile                              # Fichier de build multi-étapes pour générer l'image d'exécution légère
     └── settings.gradle                         # Fichier de configuration Gradle
 ---
-
+```
 ## Pré-requis
 
 - Un compte AWS opérationnel.
