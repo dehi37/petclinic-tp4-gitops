@@ -29,10 +29,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Authentification AWS (OIDC)
+      # Utilisation des secrets pour le premier déploiement automatique du rôle OIDC
+      - name: Authentification AWS (Initialisation automatique)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::049618906674:role/petclinic-ci
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
       - name: Setup Terraform
@@ -44,12 +46,12 @@ jobs:
       - name: Terraform Init
         run: terraform init
       
-      # ÉTAPE AJOUTÉE : Scan de sécurité de l'IaC avec tfsec
+      # Scan de sécurité de l'IaC avec tfsec
       - name: Run tfsec Security Scan
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
           working-directory: ./terraform
-          soft-fail: true # Évite de bloquer complètement si vous avez de petits avertissements de sécurité hérités du TP3
+          soft-fail: true
 
       - name: Terraform Validate
         run: terraform validate
@@ -58,12 +60,10 @@ jobs:
         id: plan
         run: terraform plan -no-color -out=tfplan
         env:
-          # Injection dynamique du nom du dépôt actuel pour que Terraform l'associe à var.github_repo
           TF_VAR_github_repo: ${{ github.repository }}
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
         env:
-          # Également injecté à l'apply pour garantir la correspondance exacte
           TF_VAR_github_repo: ${{ github.repository }}

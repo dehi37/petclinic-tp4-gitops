@@ -153,8 +153,14 @@ resource "aws_iam_server_certificate" "petclinic_automated_cert" {
 }
 
 # ── Rôle de déploiement OIDC pour GitHub Actions (100% dynamique) ──
-resource "aws_iam_role" "github_actions_oidc" {
-  name = "${var.name_prefix}-github-actions-role"
+# ── Récupération ou création du fournisseur OIDC GitHub ──
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+}
+
+# ── Création AUTOMATIQUE du rôle de CI "petclinic-ci" ──
+resource "aws_iam_role" "github_actions_ci" {
+  name = "petclinic-ci"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -162,8 +168,7 @@ resource "aws_iam_role" "github_actions_oidc" {
       {
         Effect = "Allow"
         Principal = {
-          # L'ID de compte est récupéré dynamiquement ici grâce au data source !
-          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+          Federated = data.aws_iam_openid_connect_provider.github.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -171,7 +176,7 @@ resource "aws_iam_role" "github_actions_oidc" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            # Le dépôt GitHub peut être personnalisé via une variable pour rester reproductible
+            # Utilise la variable dynamique github_repo configurée plus tôt
             "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
           }
         }
@@ -179,11 +184,13 @@ resource "aws_iam_role" "github_actions_oidc" {
     ]
   })
 
-  tags = { Name = "${var.name_prefix}-github-actions-role" }
+  tags = {
+    Name = "petclinic-ci"
+  }
 }
 
-# Attache la politique AdministratorAccess au rôle GitHub (nécessaire pour le pipeline Terraform)
-resource "aws_iam_role_policy_attachment" "github_admin_attach" {
-  role       = aws_iam_role.github_actions_oidc.name
+# Attachement des privilèges Administrateur au rôle automatique de CI
+resource "aws_iam_role_policy_attachment" "github_ci_admin" {
+  role       = aws_iam_role.github_actions_ci.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
