@@ -15,7 +15,7 @@ resource "aws_secretsmanager_secret" "db" {
 
   # AJOUTE CETTE LIGNE :
   recovery_window_in_days = 0 # Désactive la corbeille (suppression immédiate au destroy)
-  tags = { Name = "${var.name_prefix}-db-secret" }
+  tags                    = { Name = "${var.name_prefix}-db-secret" }
 }
 
 resource "aws_secretsmanager_secret_version" "db" {

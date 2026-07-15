@@ -128,7 +128,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_storage_low" {
   namespace           = "AWS/RDS"
   period              = 300
   statistic           = "Average"
-  threshold           = 2147483648  # 2 Go en octets
+  threshold           = 2147483648 # 2 Go en octets
   alarm_description   = "Espace libre RDS < 2 Go"
   alarm_actions       = [aws_sns_topic.alerts.arn]
 
@@ -151,11 +151,11 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/ECS", "CPUUtilization", "ClusterName", "${var.name_prefix}-cluster", "ServiceName", "${var.name_prefix}-service"],
             ["AWS/ECS", "MemoryUtilization", "ClusterName", "${var.name_prefix}-cluster", "ServiceName", "${var.name_prefix}-service"]
           ]
-          period = 60
-          stat   = "Average"
-          region = var.aws_region
-          title  = "ECS CPU & Memoire"
-          view   = "timeSeries"
+          period  = 60
+          stat    = "Average"
+          region  = var.aws_region
+          title   = "ECS CPU & Memoire"
+          view    = "timeSeries"
           stacked = false
           yAxis = {
             left = {
@@ -172,11 +172,11 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix],
             ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", var.alb_arn_suffix]
           ]
-          period = 60
-          stat   = "Sum"
-          region = var.aws_region
-          title  = "ALB Requetes & Erreurs 5xx"
-          view   = "timeSeries"
+          period  = 60
+          stat    = "Sum"
+          region  = var.aws_region
+          title   = "ALB Requetes & Erreurs 5xx"
+          view    = "timeSeries"
           stacked = false
         }
       },
@@ -187,11 +187,11 @@ resource "aws_cloudwatch_dashboard" "main" {
             ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${var.name_prefix}-postgres"],
             ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "${var.name_prefix}-postgres"]
           ]
-          period = 60
-          stat   = "Average"
-          region = var.aws_region
-          title  = "RDS CPU & Connexions"
-          view   = "timeSeries"
+          period  = 60
+          stat    = "Average"
+          region  = var.aws_region
+          title   = "RDS CPU & Connexions"
+          view    = "timeSeries"
           stacked = false
           yAxis = {
             left = {

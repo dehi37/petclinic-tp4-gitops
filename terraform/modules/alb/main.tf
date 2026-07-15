@@ -14,7 +14,7 @@ resource "aws_lb" "main" {
 
   enable_deletion_protection       = false
   enable_cross_zone_load_balancing = true
-  drop_invalid_header_fields       = true  # Sécurité : rejette les headers invalides
+  drop_invalid_header_fields       = true # Sécurité : rejette les headers invalides
 
 
   # AJOUTE CE BLOC À L'INTÉRIEUR DE TON ALB :
@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "app" {
   port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip"  # Obligatoire pour Fargate
+  target_type = "ip" # Obligatoire pour Fargate
 
   health_check {
     enabled             = true
@@ -100,7 +100,7 @@ resource "aws_lb_target_group" "app" {
     matcher             = "200,302"
   }
 
-  deregistration_delay = 30  # Secondes avant de retirer une tâche du TG
+  deregistration_delay = 30 # Secondes avant de retirer une tâche du TG
 
   tags = { Name = "${var.name_prefix}-tg" }
 }

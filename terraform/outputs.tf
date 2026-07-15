@@ -38,7 +38,7 @@ output "cloudfront_dns_url" {
 
 output "deploy_instructions" {
   description = "Instructions pour pousser l'image Docker et déployer"
-  value = <<-EOT
+  value       = <<-EOT
     ====== Instructions de déploiement ======
 
     1. Authentifier Docker auprès d'ECR :

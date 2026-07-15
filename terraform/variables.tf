@@ -70,7 +70,7 @@ variable "certificate_arn" {
 variable "container_image" {
   description = "Image Docker de l'application (ex: <account>.dkr.ecr.us-east-1.amazonaws.com/petclinic:latest)"
   type        = string
-  default     = ""  # sera remplacé par l'image ECR après push
+  default     = "" # sera remplacé par l'image ECR après push
 }
 
 variable "container_port" {

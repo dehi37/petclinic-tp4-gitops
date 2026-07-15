@@ -41,20 +41,20 @@ module "ecr" {
 module "iam" {
   source = "./modules/iam"
 
-  name_prefix          = local.name_prefix
-  aws_region           = var.aws_region
-  db_secret_arn        = module.secrets.db_secret_arn
-  ecr_repository_arn   = module.ecr.repository_arn
-  log_group_arn        = module.cloudwatch.ecs_log_group_arn
+  name_prefix        = local.name_prefix
+  aws_region         = var.aws_region
+  db_secret_arn      = module.secrets.db_secret_arn
+  ecr_repository_arn = module.ecr.repository_arn
+  log_group_arn      = module.cloudwatch.ecs_log_group_arn
 }
 
 # ── 5. Secrets Manager – Mot de passe RDS ────────────────────────────────────
 module "secrets" {
   source = "./modules/secrets"
 
-  name_prefix  = local.name_prefix
-  db_name      = var.db_name
-  db_username  = var.db_username
+  name_prefix = local.name_prefix
+  db_name     = var.db_name
+  db_username = var.db_username
 }
 
 # ── 6. RDS PostgreSQL Multi-AZ ───────────────────────────────────────────────
@@ -87,40 +87,40 @@ module "cloudwatch" {
 module "alb" {
   source = "./modules/alb"
 
-  name_prefix      = local.name_prefix
-  vpc_id           = module.vpc.vpc_id
+  name_prefix       = local.name_prefix
+  vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
-  sg_alb_id        = module.security_groups.sg_alb_id
-  container_port   = var.container_port
-  certificate_arn = module.iam.certificate_arn
+  sg_alb_id         = module.security_groups.sg_alb_id
+  container_port    = var.container_port
+  certificate_arn   = module.iam.certificate_arn
   #certificate_arn  = var.certificate_arn
-  domain_name      = var.domain_name
+  domain_name = var.domain_name
 }
 
 # ── 9. ECS Fargate – Service applicatif + Auto Scaling ───────────────────────
 module "ecs" {
   source = "./modules/ecs"
 
-  name_prefix             = local.name_prefix
-  aws_region              = var.aws_region
-  vpc_id                  = module.vpc.vpc_id
-  private_subnet_ids      = module.vpc.private_subnet_ids
-  sg_app_id               = module.security_groups.sg_app_id
-  alb_target_group_arn    = module.alb.target_group_arn
-  container_image         = var.container_image != "" ? var.container_image : "${module.ecr.repository_url}:latest"
-  container_port          = var.container_port
-  task_cpu                = var.task_cpu
-  task_memory             = var.task_memory
-  ecs_desired_count       = var.ecs_desired_count
-  ecs_min_count           = var.ecs_min_count
-  ecs_max_count           = var.ecs_max_count
-  cpu_scaling_target      = var.cpu_scaling_target
-  execution_role_arn      = module.iam.ecs_execution_role_arn
-  task_role_arn           = module.iam.ecs_task_role_arn
-  log_group_name          = module.cloudwatch.ecs_log_group_name
-  db_secret_arn           = module.secrets.db_secret_arn
-  db_endpoint             = module.rds.db_endpoint
-  db_name                 = var.db_name
+  name_prefix          = local.name_prefix
+  aws_region           = var.aws_region
+  vpc_id               = module.vpc.vpc_id
+  private_subnet_ids   = module.vpc.private_subnet_ids
+  sg_app_id            = module.security_groups.sg_app_id
+  alb_target_group_arn = module.alb.target_group_arn
+  container_image      = var.container_image != "" ? var.container_image : "${module.ecr.repository_url}:latest"
+  container_port       = var.container_port
+  task_cpu             = var.task_cpu
+  task_memory          = var.task_memory
+  ecs_desired_count    = var.ecs_desired_count
+  ecs_min_count        = var.ecs_min_count
+  ecs_max_count        = var.ecs_max_count
+  cpu_scaling_target   = var.cpu_scaling_target
+  execution_role_arn   = module.iam.ecs_execution_role_arn
+  task_role_arn        = module.iam.ecs_task_role_arn
+  log_group_name       = module.cloudwatch.ecs_log_group_name
+  db_secret_arn        = module.secrets.db_secret_arn
+  db_endpoint          = module.rds.db_endpoint
+  db_name              = var.db_name
 }
 
 # ── 10. AWS Budgets ───────────────────────────────────────────────────────────

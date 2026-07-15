@@ -5,13 +5,13 @@
 resource "aws_ecr_repository" "main" {
   name                 = "${var.name_prefix}/${var.project_name}"
   image_tag_mutability = "MUTABLE"
-  force_delete = true # <--- Ajoute cette ligne
+  force_delete         = true # <--- Ajoute cette ligne
   image_scanning_configuration {
-    scan_on_push = true  # Analyse de vulnérabilités à chaque push
+    scan_on_push = true # Analyse de vulnérabilités à chaque push
   }
 
   encryption_configuration {
-    encryption_type = "KMS"  # Chiffrement au repos avec KMS
+    encryption_type = "KMS" # Chiffrement au repos avec KMS
   }
 
   tags = { Name = "${var.name_prefix}-ecr" }

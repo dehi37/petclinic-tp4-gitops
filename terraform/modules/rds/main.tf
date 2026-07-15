@@ -61,7 +61,7 @@ resource "aws_db_instance" "main" {
 
   # Stockage chiffré
   allocated_storage     = var.db_allocated_storage
-  max_allocated_storage = var.db_allocated_storage * 2  # Autoscaling stockage
+  max_allocated_storage = var.db_allocated_storage * 2 # Autoscaling stockage
   storage_type          = "gp3"
   storage_encrypted     = true
   kms_key_id            = aws_kms_key.rds.arn
@@ -84,7 +84,7 @@ resource "aws_db_instance" "main" {
   backup_window             = "03:00-04:00"
   maintenance_window        = "Mon:04:00-Mon:05:00"
   delete_automated_backups  = true
-  deletion_protection       = false   # Protection contre la suppression accidentelle
+  deletion_protection       = false # Protection contre la suppression accidentelle
   skip_final_snapshot       = true
   final_snapshot_identifier = null
 

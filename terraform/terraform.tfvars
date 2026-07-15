@@ -3,7 +3,7 @@
 aws_region   = "us-east-1"
 project_name = "petclinic-isi"
 environment  = "prod"
-binome_name = "binome-dehi-atikh"   # Remplacer par vos noms
+binome_name  = "binome-dehi-atikh" # Remplacer par vos noms
 
 # Réseau
 vpc_cidr             = "10.0.0.0/16"
@@ -13,16 +13,16 @@ private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
 db_subnet_cidrs      = ["10.0.21.0/24", "10.0.22.0/24", "10.0.23.0/24"]
 
 # TLS – Laisser vide si pas de domaine (le listener HTTPS sera désactivé)
-domain_name     = ""
+domain_name = ""
 
 
 # ECS Fargate
-container_port    = 8080
-task_cpu          = 512
-task_memory       = 1024
-ecs_desired_count = 3
-ecs_min_count     = 2
-ecs_max_count     = 6
+container_port     = 8080
+task_cpu           = 512
+task_memory        = 1024
+ecs_desired_count  = 3
+ecs_min_count      = 2
+ecs_max_count      = 6
 cpu_scaling_target = 70
 
 # RDS PostgreSQL
