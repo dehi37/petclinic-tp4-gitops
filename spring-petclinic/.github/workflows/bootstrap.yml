@@ -1,0 +1,35 @@
+name: "01 - AWS Backend Bootstrap"
+
+on:
+  workflow_dispatch: # Déclenchement manuel par bouton sur GitHub
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  bootstrap:
+    name: "Créer le Backend S3 & DynamoDB"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform/bootstrap
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authentification AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::049618906674:role/petclinic-ci
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Regroupement propre de l'initialisation et du déploiement
+      - name: Provisioner S3 & DynamoDB
+        run: |
+          terraform init
+          terraform apply -auto-approve

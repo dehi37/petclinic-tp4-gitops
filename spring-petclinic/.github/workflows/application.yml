@@ -1,0 +1,98 @@
+name: "03 - Application CI/CD"
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'terraform/**'
+      - 'bootstrap/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    name: "Pipeline applicatif"
+    runs-on: ubuntu-latest
+    # ====== AJOUT DE LA REDIRECTION VERS LE DOSSIER APPLICATIF ======
+    defaults:
+      run:
+        working-directory: ./spring-petclinic
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      # ÉTAPE 1 DU TABLEAU : Compilation et exécution des tests unitaires
+      - name: Build and Test with Maven
+        run: ./mvnw clean verify
+
+      - name: Authentification AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::049618906674:role/petclinic-ci
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ÉTAPE 3 DU TABLEAU : Build avec tag unique (SHA)
+      - name: Build & Tag Image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/petclinic-isi-prod:${{ github.sha }} .
+          docker tag ${{ steps.login-ecr.outputs.registry }}/petclinic-isi-prod:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/petclinic-isi-prod:latest
+
+      # ÉTAPE 2 DU TABLEAU : Scan de sécurité de l'image Docker avec Trivy (Security Gate)
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ steps.login-ecr.outputs.registry }}/petclinic-isi-prod:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push Image to Amazon ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/petclinic-isi-prod:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/petclinic-isi-prod:latest
+
+      # ÉTAPE 5 DU TABLEAU : Déploiement (Sauvegarde de l'ancienne définition de tâche pour le rollback)
+      - name: Get Current Task Definition (for backup)
+        id: task-backup
+        run: |
+          aws ecs describe-services --cluster petclinic-isi-prod-cluster --services petclinic-isi-prod-service --query "services[0].taskDefinition" --output text > task_def_backup.txt
+          echo "backup_arn=$(cat task_def_backup.txt)" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Amazon ECS
+        id: deploy
+        run: |
+          aws ecs update-service --cluster petclinic-isi-prod-cluster --service petclinic-isi-prod-service --force-new-deployment
+
+      # ÉTAPE 6 DU TABLEAU : Smoke Test & Rollback automatique en cas d'échec
+      - name: Smoke Test & Automatic Rollback
+        run: |
+          echo "Attente du démarrage de la nouvelle version (90s)..."
+          sleep 90
+          
+          # Tentative d'appel à la sonde de santé Actuator
+          if curl -f http://${{ steps.login-ecr.outputs.registry }}/actuator/health; then
+            echo "Smoke test réussi ! L'application est saine."
+          else
+            echo "❌ ÉCHEC DU SMOKE TEST ! Lancement du Rollback automatique..."
+            # Restauration de la tâche de définition précédente sauvegardée à l'étape 5
+            aws ecs update-service --cluster petclinic-isi-prod-cluster --service petclinic-isi-prod-service --task-definition ${{ steps.task-backup.outputs.backup_arn }} --force-new-deployment
+            echo "Rollback effectué avec succès vers la version précédente stable."
+            exit 1
+          fi
