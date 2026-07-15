@@ -1,6 +1,6 @@
 ################################################################################
-# Module IAM – Rôles en moindre privilège pour ECS
-# Aucune clé d'accès statique – authentification via rôles IAM uniquement
+# Module IAM – Rôles en moindre privilège pour ECS & OIDC GitHub
+# Aucune clé d'accès statique – authentification sécurisée uniquement
 ################################################################################
 
 data "aws_caller_identity" "current" {}
@@ -20,12 +20,6 @@ resource "aws_iam_role" "ecs_execution" {
 
   tags = { Name = "${var.name_prefix}-ecs-execution-role" }
 }
-
-# Récupère dynamiquement le certificat existant dans IAM par son nom
-#data "aws_iam_server_certificate" "petclinic_cert" {
-#  name   = "petclinic-prod-self-signed-cert"
-#  latest = true
-#}
 
 # Politique AWS gérée de base pour ECS
 resource "aws_iam_role_policy_attachment" "ecs_execution_base" {
@@ -121,7 +115,7 @@ resource "aws_iam_role_policy" "ecs_task_custom" {
   })
 }
 
-
+# ── Génération automatique du certificat SSL/TLS pour l'ALB ──────────────────
 
 # 1. Génère une clé privée RSA sécurisée
 resource "tls_private_key" "petclinic_key" {
@@ -156,4 +150,40 @@ resource "aws_iam_server_certificate" "petclinic_automated_cert" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+# ── Rôle de déploiement OIDC pour GitHub Actions (100% dynamique) ──
+resource "aws_iam_role" "github_actions_oidc" {
+  name = "${var.name_prefix}-github-actions-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          # L'ID de compte est récupéré dynamiquement ici grâce au data source !
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            # Le dépôt GitHub peut être personnalisé via une variable pour rester reproductible
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = { Name = "${var.name_prefix}-github-actions-role" }
+}
+
+# Attache la politique AdministratorAccess au rôle GitHub (nécessaire pour le pipeline Terraform)
+resource "aws_iam_role_policy_attachment" "github_admin_attach" {
+  role       = aws_iam_role.github_actions_oidc.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }

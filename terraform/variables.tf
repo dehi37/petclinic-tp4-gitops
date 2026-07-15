@@ -166,3 +166,8 @@ variable "budget_alert_threshold" {
   type        = number
   default     = 80
 }
+
+variable "github_repo" {
+  type        = string
+  description = "Le dépôt GitHub actuel au format 'organisation/nom-du-repo'"
+}
