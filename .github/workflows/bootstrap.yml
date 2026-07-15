@@ -19,10 +19,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Authentification AWS (OIDC)
+      # Correction : Utilisation temporaire des clés d'accès administrateur pour l'initialisation
+      - name: Authentification AWS (Initialisation automatique)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::049618906674:role/petclinic-ci
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
       - name: Setup Terraform
