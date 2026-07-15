@@ -1,4 +1,4 @@
-name: "01 - AWS Backend Bootstrap"
+name: "01 - AWS Backend Bootstrap v1.1"
 
 on:
   workflow_dispatch: # Déclenchement manuel par bouton sur GitHub
