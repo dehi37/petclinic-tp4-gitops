@@ -32,27 +32,28 @@ resource "aws_lb" "main" {
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${var.name_prefix}-alb-logs-${random_id.suffix.hex}"
   force_destroy = true
-
-  tags = { Name = "${var.name_prefix}-alb-logs" }
 }
 
-resource "random_id" "suffix" {
-  byte_length = 4
-}
-
-resource "aws_s3_bucket_versioning" "alb_logs" {
+# 1. Enable Server Side Encryption (using AWS KMS or AWS Managed Key)
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs_sse" {
   bucket = aws_s3_bucket.alb_logs.id
-  versioning_configuration { status = "Enabled" }
-}
 
-resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
-  bucket = aws_s3_bucket.alb_logs.id
   rule {
-    id     = "expire-logs"
-    status = "Enabled"
-    filter {}
-    expiration { days = 90 }
+    apply_server_side_encryption_by_default {
+      # Si kms_key_arn est fourni, on utilise KMS, sinon on reste sur le chiffrement par défaut S3 (AES256)
+      sse_algorithm     = var.kms_key_arn != null ? "aws:kms" : "AES256"
+      kms_master_key_id = var.kms_key_arn
+    }
   }
+}
+
+# 2. Block all public access (Best practice)
+resource "aws_s3_bucket_public_access_block" "alb_logs_block" {
+  bucket                  = aws_s3_bucket.alb_logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_public_access_block" "alb_logs" {

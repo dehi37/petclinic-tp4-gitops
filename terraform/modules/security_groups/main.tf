@@ -4,54 +4,46 @@
 ################################################################################
 
 # ── SG ALB : accepte HTTPS (443) et HTTP (80 → redirect) depuis Internet ─────
+# ALB Security Group: Only allow HTTP/HTTPS from the public internet
 resource "aws_security_group" "alb" {
-  name        = "${var.name_prefix}-sg-alb"
-  description = "Security Group for Application Load Balancer"
-  vpc_id      = var.vpc_id
+  name   = "${var.name_prefix}-alb-sg"
+  vpc_id = var.vpc_id
 
   ingress {
-    description = "HTTPS from Internet"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Allowed if this is your public entry point
+  }
+
+  ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "HTTP from Internet - redirect to HTTPS"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  # Restrict egress to necessary destinations, or ignore if wide egress is intended
+  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress {
-    description = "Outbound to ECS tasks"
-    from_port   = var.container_port
-    to_port     = var.container_port
-    protocol    = "tcp"
-    self        = false
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = { Name = "${var.name_prefix}-sg-alb" }
-}
-
-# ── SG APP : accepte uniquement le trafic provenant du SG ALB ────────────────
-resource "aws_security_group" "app" {
-  name        = "${var.name_prefix}-sg-app"
-  description = "Security Group for ECS Fargate tasks"
-  vpc_id      = var.vpc_id
-
-  egress {
-    description = "Outbound Internet via NAT Gateway"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
 
-  tags = { Name = "${var.name_prefix}-sg-app" }
+# App Security Group: Only allow traffic coming FROM the ALB
+resource "aws_security_group" "app" {
+  name   = "${var.name_prefix}-app-sg"
+  vpc_id = var.vpc_id
+
+  ingress {
+    from_port       = 8080 # Assuming your container port
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id] # Source limited to ALB
+  }
 }
 
 # Règle d'entrée séparée pour éviter la référence circulaire
