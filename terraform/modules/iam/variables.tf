@@ -6,5 +6,6 @@ variable "log_group_arn" { type = string }
 
 variable "github_repo" {
   type        = string
-  description = "Le dépôt GitHub actuel transmis par le module racine"
+  description = "Le dépôt GitHub pour les rôles IAM"
+  default     = "" # Ou null
 }

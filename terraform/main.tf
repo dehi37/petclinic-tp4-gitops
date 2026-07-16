@@ -46,6 +46,7 @@ module "iam" {
   db_secret_arn      = module.secrets.db_secret_arn
   ecr_repository_arn = module.ecr.repository_arn
   log_group_arn      = module.cloudwatch.ecs_log_group_arn
+  github_repo        = "ton-username-github/ton-repo-name" # <-- Ajoute cette ligne
 }
 
 # ── 5. Secrets Manager – Mot de passe RDS ────────────────────────────────────

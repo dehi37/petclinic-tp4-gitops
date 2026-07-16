@@ -4,6 +4,13 @@
 # Health checks sur /actuator/health (Spring Boot Actuator)
 ################################################################################
 
+# Génère un suffixe aléatoire pour assurer l'unicité du nom du bucket S3
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+
+
 # ── Application Load Balancer ─────────────────────────────────────────────────
 resource "aws_lb" "main" {
   name               = "${var.name_prefix}-alb"
@@ -29,9 +36,17 @@ resource "aws_lb" "main" {
 }
 
 # ── Bucket S3 pour les logs d'accès ALB ──────────────────────────────────────
+# Ton code existant pour le bucket S3 :
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${var.name_prefix}-alb-logs-${random_id.suffix.hex}"
   force_destroy = true
+}
+
+resource "aws_s3_bucket_versioning" "alb_logs_versioning" {
+  bucket = aws_s3_bucket.alb_logs.id
+  versioning_configuration {
+    status = var.enable_s3_versioning ? "Enabled" : "Suspended"
+  }
 }
 
 # 1. Enable Server Side Encryption (using AWS KMS or AWS Managed Key)
